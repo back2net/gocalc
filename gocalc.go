@@ -51,8 +51,8 @@ func main() {
 func parseExpression(s string) (op rune, x, y int) {
 
 	for idx, char := range s {
-		switch {
-		case char == '+':
+		switch char {
+		case '+':
 
 			x, err := strconv.Atoi(s[:idx])
 			if err != nil {
@@ -65,7 +65,7 @@ func parseExpression(s string) (op rune, x, y int) {
 			}
 			return char, x, y
 
-		case char == '-':
+		case '-':
 
 			x, err := strconv.Atoi(s[:idx])
 			if err != nil {
@@ -78,7 +78,7 @@ func parseExpression(s string) (op rune, x, y int) {
 			}
 			return char, x, y
 
-		case char == '*':
+		case '*':
 
 			x, err := strconv.Atoi(s[:idx])
 			if err != nil {
@@ -91,7 +91,7 @@ func parseExpression(s string) (op rune, x, y int) {
 			}
 			return char, x, y
 
-		case char == '/':
+		case '/':
 
 			x, err := strconv.Atoi(s[:idx])
 			if err != nil {
