@@ -11,7 +11,7 @@ import (
 
 func main() {
 	usage()
-
+	fmt.Fprint(os.Stdout, "$go-calc: ")
 	reader := bufio.NewReader(os.Stdin)
 	text, err := reader.ReadString('\n')
 	if err != nil {
@@ -146,5 +146,5 @@ func usage() {
 	For example:
 	2 + 5, 4 - 6, 8* 10, 14/2
 	Order and spaces doesn't matters.`
-	fmt.Fprintf(os.Stdout, "%s\n\n\r", text)
+	fmt.Fprintf(os.Stdout, "%s\n\n", text)
 }
