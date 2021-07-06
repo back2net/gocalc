@@ -22,30 +22,33 @@ func main() {
 	text = strings.ReplaceAll(text, " ", "")
 	tmpArr := strings.Split(text, ",")
 
-	doneAdd := make(chan struct{})
-	doneSub := make(chan struct{})
-	donePow := make(chan struct{})
-	doneDiv := make(chan struct{})
+	done := make(chan int)
 
 	for _, s := range tmpArr {
 		op, x, y := parseExpression(s)
 		switch {
 		case op == '+':
-			go add(x, y, doneAdd)
+			go add(x, y, done)
 		case op == '-':
-			go sub(x, y, doneSub)
+			go sub(x, y, done)
 		case op == '*':
-			go pow(x, y, donePow)
+			go pow(x, y, done)
 		case op == '/':
-			go div(x, y, doneDiv)
+			go div(x, y, done)
 		}
 
 	}
+
 	// goroutine sync
-	<-doneAdd
-	<-doneSub
-	<-donePow
-	<-doneDiv
+	func(chan int) {
+		grtSpawned := len(tmpArr)
+		var grtCount int
+		defer close(done)
+		for grtCount < grtSpawned {
+			grtCount += <-done
+		}
+	}(done)
+
 }
 
 func parseExpression(s string) (op rune, x, y int) {
@@ -108,29 +111,26 @@ func parseExpression(s string) (op rune, x, y int) {
 	return
 }
 
-func add(x, y int, doneAdd chan struct{}) {
-	defer close(doneAdd)
+func add(x, y int, done chan int) {
+	defer func() { done <- 1 }()
 	result := x + y
 	fmt.Fprintf(os.Stdout, "%d + %d = %d\n", x, y, result)
-
 }
 
-func sub(x, y int, doneSub chan struct{}) {
-	defer close(doneSub)
+func sub(x, y int, done chan int) {
+	defer func() { done <- 1 }()
 	result := x - y
 	fmt.Fprintf(os.Stdout, "%d - %d = %d\n", x, y, result)
 }
 
-func pow(x, y int, donePow chan struct{}) {
-	defer close(donePow)
-
+func pow(x, y int, done chan int) {
+	defer func() { done <- 1 }()
 	result := x * y
 	fmt.Fprintf(os.Stdout, "%d * %d = %d\n", x, y, result)
-
 }
 
-func div(x, y int, doneDiv chan struct{}) {
-	defer close(doneDiv)
+func div(x, y int, done chan int) {
+	defer func() { done <- 1 }()
 	if y == 0 {
 		log.Fatal("divizion by zero!")
 		return
