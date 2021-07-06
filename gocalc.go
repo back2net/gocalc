@@ -24,6 +24,11 @@ func main() {
 
 	done := make(chan int)
 
+	if len(tmpArr[0]) == 0 {
+		defer returnToMain()
+		log.Panic("Error. Enter at least one expression or ctrl+c for exit.")
+	}
+
 	for _, s := range tmpArr {
 		op, x, y := parseExpression(s)
 		switch {
@@ -49,6 +54,12 @@ func main() {
 		}
 	}(done)
 
+}
+
+func returnToMain() {
+	if r := recover(); r != nil {
+		main()
+	}
 }
 
 func parseExpression(s string) (op rune, x, y int) {
@@ -145,6 +156,6 @@ func usage() {
 	Enter comma separated math expressions.
 	For example:
 	2 + 5, 4 - 6, 8* 10, 14/2
-	Order and spaces doesn't matters.`
+	Quantity, order and spaces doesn't matters.`
 	fmt.Fprintf(os.Stdout, "%s\n\n", text)
 }
