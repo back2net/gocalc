@@ -11,7 +11,7 @@ import (
 
 func main() {
 	usage()
-
+	fmt.Fprint(os.Stdout, "$go-calc: ")
 	reader := bufio.NewReader(os.Stdin)
 	text, err := reader.ReadString('\n')
 	if err != nil {
@@ -30,13 +30,13 @@ func main() {
 	for _, s := range tmpArr {
 		op, x, y := parseExpression(s)
 		switch {
-		case op == "+":
+		case op == '+':
 			go add(x, y, doneAdd)
-		case op == "-":
+		case op == '-':
 			go sub(x, y, doneSub)
-		case op == "*":
+		case op == '*':
 			go pow(x, y, donePow)
-		case op == "/":
+		case op == '/':
 			go div(x, y, doneDiv)
 		}
 
@@ -48,11 +48,11 @@ func main() {
 	<-doneDiv
 }
 
-func parseExpression(s string) (op string, x, y int) {
+func parseExpression(s string) (op rune, x, y int) {
 
 	for idx, char := range s {
-		switch {
-		case char == '+':
+		switch char {
+		case '+':
 
 			x, err := strconv.Atoi(s[:idx])
 			if err != nil {
@@ -63,22 +63,9 @@ func parseExpression(s string) (op string, x, y int) {
 			if err != nil {
 				log.Fatal(err)
 			}
-			return "+", x, y
+			return char, x, y
 
-		case char == '-':
-
-			x, err := strconv.Atoi(s[:idx])
-			if err != nil {
-				log.Fatal(err)
-			}
-
-			y, err := strconv.Atoi(s[idx+1:])
-			if err != nil {
-				log.Fatal(err)
-			}
-			return "-", x, y
-
-		case char == '*':
+		case '-':
 
 			x, err := strconv.Atoi(s[:idx])
 			if err != nil {
@@ -89,9 +76,9 @@ func parseExpression(s string) (op string, x, y int) {
 			if err != nil {
 				log.Fatal(err)
 			}
-			return "*", x, y
+			return char, x, y
 
-		case char == '/':
+		case '*':
 
 			x, err := strconv.Atoi(s[:idx])
 			if err != nil {
@@ -102,7 +89,20 @@ func parseExpression(s string) (op string, x, y int) {
 			if err != nil {
 				log.Fatal(err)
 			}
-			return "/", x, y
+			return char, x, y
+
+		case '/':
+
+			x, err := strconv.Atoi(s[:idx])
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			y, err := strconv.Atoi(s[idx+1:])
+			if err != nil {
+				log.Fatal(err)
+			}
+			return char, x, y
 		}
 	}
 	return
@@ -146,5 +146,5 @@ func usage() {
 	For example:
 	2 + 5, 4 - 6, 8* 10, 14/2
 	Order and spaces doesn't matters.`
-	fmt.Fprintf(os.Stdout, "%s\n\n\r", text)
+	fmt.Fprintf(os.Stdout, "%s\n\n", text)
 }
