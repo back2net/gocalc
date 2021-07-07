@@ -53,21 +53,47 @@ func isMathOperator(r rune) bool {
 }
 
 func parseExpression(s string, done chan int) {
-
 	for idx, char := range s {
-		if unicode.IsDigit(char) {
+		if unicode.IsDigit(char) || char == '.' {
 			continue
 		}
 		if isMathOperator(char) {
-			x, err := strconv.Atoi(s[:idx])
-			if err != nil {
-				break
-			}
-			y, err := strconv.Atoi(s[idx+1:])
-			if err != nil {
-				break
-			}
+			strX := s[:idx]
+			strY := s[idx+1:]
+			pointsCountX := strings.Count(strX, ".")
+			pointsCountY := strings.Count(strY, ".")
+			var x, y float64
+			var err error
 
+			if pointsCountX > 1 || pointsCountY > 1 {
+				break
+			}
+			if pointsCountX == 1 {
+				x, err = strconv.ParseFloat(strX, 64)
+				if err != nil {
+					break
+				}
+			}
+			if pointsCountY == 1 {
+				y, err = strconv.ParseFloat(strY, 64)
+				if err != nil {
+					break
+				}
+			}
+			if pointsCountX == 0 {
+				tmp_x, err := strconv.Atoi(strX)
+				x = float64(tmp_x)
+				if err != nil {
+					break
+				}
+			}
+			if pointsCountY == 0 {
+				tmp_y, err := strconv.Atoi(strY)
+				y = float64(tmp_y)
+				if err != nil {
+					break
+				}
+			}
 			switch char {
 			case '+':
 				go add(x, y, done)
@@ -86,32 +112,32 @@ func parseExpression(s string, done chan int) {
 	done <- 1
 }
 
-func add(x, y int, done chan int) {
+func add(x, y float64, done chan int) {
 	defer func() { done <- 1 }()
 	result := x + y
-	fmt.Fprintf(os.Stdout, "%d + %d = %d\n", x, y, result)
+	fmt.Fprintf(os.Stdout, "%v + %v = %v\n", x, y, result)
 }
 
-func sub(x, y int, done chan int) {
+func sub(x, y float64, done chan int) {
 	defer func() { done <- 1 }()
 	result := x - y
-	fmt.Fprintf(os.Stdout, "%d - %d = %d\n", x, y, result)
+	fmt.Fprintf(os.Stdout, "%v - %v = %v\n", x, y, result)
 }
 
-func pow(x, y int, done chan int) {
+func pow(x, y float64, done chan int) {
 	defer func() { done <- 1 }()
 	result := x * y
-	fmt.Fprintf(os.Stdout, "%d * %d = %d\n", x, y, result)
+	fmt.Fprintf(os.Stdout, "%v * %v = %v\n", x, y, result)
 }
 
-func div(x, y int, done chan int) {
+func div(x, y float64, done chan int) {
 	defer func() { done <- 1 }()
 	if y == 0 {
-		fmt.Fprintf(os.Stderr, "%d / %d: divizion by zero!\n", x, y)
+		fmt.Fprintf(os.Stderr, "%v / %v: divizion by zero!\n", x, y)
 		return
 	}
 	result := float64(x / y)
-	fmt.Fprintf(os.Stdout, "%d / %d = %f\n", x, y, result)
+	fmt.Fprintf(os.Stdout, "%v / %v = %v\n", x, y, result)
 }
 
 func usage() {
