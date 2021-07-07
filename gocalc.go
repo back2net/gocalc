@@ -55,61 +55,30 @@ func isMathOperator(r rune) bool {
 func parseExpression(s string, done chan int) {
 
 	for idx, char := range s {
-		if unicode.IsDigit(char) || isMathOperator(char) {
+		if unicode.IsDigit(char) {
+			continue
+		}
+		if isMathOperator(char) {
+			x, err := strconv.Atoi(s[:idx])
+			if err != nil {
+				break
+			}
+			y, err := strconv.Atoi(s[idx+1:])
+			if err != nil {
+				break
+			}
 
 			switch char {
-
 			case '+':
-				x, err := strconv.Atoi(s[:idx])
-				if err != nil {
-					break
-				}
-				y, err := strconv.Atoi(s[idx+1:])
-				if err != nil {
-					break
-				}
 				go add(x, y, done)
-				return
-
 			case '-':
-				x, err := strconv.Atoi(s[:idx])
-				if err != nil {
-					break
-				}
-				y, err := strconv.Atoi(s[idx+1:])
-				if err != nil {
-					break
-				}
 				go sub(x, y, done)
-				return
-
 			case '*':
-				x, err := strconv.Atoi(s[:idx])
-				if err != nil {
-					break
-				}
-				y, err := strconv.Atoi(s[idx+1:])
-				if err != nil {
-					break
-				}
 				go pow(x, y, done)
-				return
-
 			case '/':
-				x, err := strconv.Atoi(s[:idx])
-				if err != nil {
-					break
-				}
-				y, err := strconv.Atoi(s[idx+1:])
-				if err != nil {
-					break
-				}
 				go div(x, y, done)
-				return
-
-			default:
-				continue
 			}
+			return
 		}
 	}
 	// we are here if string contain non digit or none of math operators'
