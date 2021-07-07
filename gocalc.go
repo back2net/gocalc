@@ -3,10 +3,10 @@ package main
 import (
 	"bufio"
 	"fmt"
-	"log"
 	"os"
 	"strconv"
 	"strings"
+	"unicode"
 )
 
 func main() {
@@ -15,124 +15,99 @@ func main() {
 	reader := bufio.NewReader(os.Stdin)
 	text, err := reader.ReadString('\n')
 	if err != nil {
-		log.Fatal(err)
+		fmt.Fprintln(os.Stderr, err)
 		return
 	}
+
 	text = strings.ReplaceAll(text, "\n", "")
 	text = strings.ReplaceAll(text, " ", "")
-	tmpArr := strings.Split(text, ",")
 
-	doneAdd := make(chan struct{})
-	doneSub := make(chan struct{})
-	donePow := make(chan struct{})
-	doneDiv := make(chan struct{})
+	if len(text) < 3 {
+		fmt.Fprintln(os.Stderr, "Error. Enter at least one expression.")
+		return
+	}
+
+	tmpArr := strings.Split(text, ",")
+	tmpArrSize := len(tmpArr)
+	done := make(chan int, tmpArrSize)
 
 	for _, s := range tmpArr {
-		op, x, y := parseExpression(s)
-		switch {
-		case op == '+':
-			go add(x, y, doneAdd)
-		case op == '-':
-			go sub(x, y, doneSub)
-		case op == '*':
-			go pow(x, y, donePow)
-		case op == '/':
-			go div(x, y, doneDiv)
-		}
-
+		parseExpression(s, done)
 	}
+
 	// goroutine sync
-	<-doneAdd
-	<-doneSub
-	<-donePow
-	<-doneDiv
+	func(chan int) {
+		grtSpawned := tmpArrSize
+		var grtCount int
+		defer close(done)
+
+		for grtCount < grtSpawned {
+			grtCount += <-done
+		}
+	}(done)
+
 }
 
-func parseExpression(s string) (op rune, x, y int) {
+func isMathOperator(r rune) bool {
+	return r == '+' || r == '-' || r == '*' || r == '/'
+}
+
+func parseExpression(s string, done chan int) {
 
 	for idx, char := range s {
-		switch char {
-		case '+':
-
+		if unicode.IsDigit(char) {
+			continue
+		}
+		if isMathOperator(char) {
 			x, err := strconv.Atoi(s[:idx])
 			if err != nil {
-				log.Fatal(err)
+				break
 			}
-
 			y, err := strconv.Atoi(s[idx+1:])
 			if err != nil {
-				log.Fatal(err)
-			}
-			return char, x, y
-
-		case '-':
-
-			x, err := strconv.Atoi(s[:idx])
-			if err != nil {
-				log.Fatal(err)
+				break
 			}
 
-			y, err := strconv.Atoi(s[idx+1:])
-			if err != nil {
-				log.Fatal(err)
+			switch char {
+			case '+':
+				go add(x, y, done)
+			case '-':
+				go sub(x, y, done)
+			case '*':
+				go pow(x, y, done)
+			case '/':
+				go div(x, y, done)
 			}
-			return char, x, y
-
-		case '*':
-
-			x, err := strconv.Atoi(s[:idx])
-			if err != nil {
-				log.Fatal(err)
-			}
-
-			y, err := strconv.Atoi(s[idx+1:])
-			if err != nil {
-				log.Fatal(err)
-			}
-			return char, x, y
-
-		case '/':
-
-			x, err := strconv.Atoi(s[:idx])
-			if err != nil {
-				log.Fatal(err)
-			}
-
-			y, err := strconv.Atoi(s[idx+1:])
-			if err != nil {
-				log.Fatal(err)
-			}
-			return char, x, y
+			return
 		}
 	}
-	return
+	// we are here if string contain non digit or none of math operators'
+	fmt.Fprintf(os.Stderr, "%s: is not valid math expression.\n", s)
+	done <- 1
 }
 
-func add(x, y int, doneAdd chan struct{}) {
-	defer close(doneAdd)
+func add(x, y int, done chan int) {
+	defer func() { done <- 1 }()
 	result := x + y
 	fmt.Fprintf(os.Stdout, "%d + %d = %d\n", x, y, result)
-
 }
 
-func sub(x, y int, doneSub chan struct{}) {
-	defer close(doneSub)
+func sub(x, y int, done chan int) {
+	defer func() { done <- 1 }()
 	result := x - y
 	fmt.Fprintf(os.Stdout, "%d - %d = %d\n", x, y, result)
 }
 
-func pow(x, y int, donePow chan struct{}) {
-	defer close(donePow)
-
+func pow(x, y int, done chan int) {
+	defer func() { done <- 1 }()
 	result := x * y
 	fmt.Fprintf(os.Stdout, "%d * %d = %d\n", x, y, result)
-
 }
 
-func div(x, y int, doneDiv chan struct{}) {
-	defer close(doneDiv)
+func div(x, y int, done chan int) {
+	defer func() { done <- 1 }()
 	if y == 0 {
-		log.Fatal("divizion by zero!")
+		fmt.Fprintf(os.Stderr, "%d / %d: divizion by zero!\n", x, y)
 		return
 	}
 	result := float64(x / y)
@@ -145,6 +120,6 @@ func usage() {
 	Enter comma separated math expressions.
 	For example:
 	2 + 5, 4 - 6, 8* 10, 14/2
-	Order and spaces doesn't matters.`
+	Quantity, order and spaces doesn't matters.`
 	fmt.Fprintf(os.Stdout, "%s\n\n", text)
 }
