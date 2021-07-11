@@ -9,6 +9,20 @@ import (
 	"unicode"
 )
 
+type Operator rune
+type Operators []Operator
+
+func (op *Operator) isValid() (valid bool) {
+	for _, check := range ValidOperators {
+		if valid = check == *op; valid {
+			return
+		}
+	}
+	return
+}
+
+var ValidOperators = Operators{'+', '-', '*', '/'}
+
 func main() {
 	usage()
 	fmt.Fprint(os.Stdout, "$go-calc: ")
@@ -48,61 +62,45 @@ func main() {
 
 }
 
-func isMathOperator(r rune) bool {
-	return r == '+' || r == '-' || r == '*' || r == '/'
-}
-
 func parseExpression(s string, done chan int) {
 	for idx, char := range s {
 		if unicode.IsDigit(char) || char == '.' {
 			continue
 		}
-		if isMathOperator(char) {
+		operator := Operator(char)
+		if operator.isValid() {
 			strX := s[:idx]
 			strY := s[idx+1:]
-			pointsCountX := strings.Count(strX, ".")
-			pointsCountY := strings.Count(strY, ".")
-			var x, y float64
 			var err error
+			var x, y interface{}
 
-			if pointsCountX > 1 || pointsCountY > 1 {
-				break
-			}
-			if pointsCountX == 1 {
+			x, err = strconv.Atoi(strX)
+			if err != nil {
 				x, err = strconv.ParseFloat(strX, 64)
 				if err != nil {
 					break
 				}
 			}
-			if pointsCountY == 1 {
+			y, err = (strconv.Atoi(strY))
+			if err != nil {
 				y, err = strconv.ParseFloat(strY, 64)
 				if err != nil {
 					break
 				}
 			}
-			if pointsCountX == 0 {
-				tmp_x, err := strconv.Atoi(strX)
-				x = float64(tmp_x)
-				if err != nil {
-					break
-				}
-			}
-			if pointsCountY == 0 {
-				tmp_y, err := strconv.Atoi(strY)
-				y = float64(tmp_y)
-				if err != nil {
-					break
-				}
-			}
+
+			outX := makeFloat(x)
+			outY := makeFloat(y)
+
 			switch char {
 			case '+':
-				go add(x, y, done)
+				go add(outX, outY, done)
 			case '-':
-				go sub(x, y, done)
+				go sub(outX, outY, done)
 			case '*':
-				go pow(x, y, done)
+				go pow(outX, outY, done)
 			case '/':
-				go div(x, y, done)
+				go div(outX, outY, done)
 			}
 			return
 		}
@@ -110,6 +108,17 @@ func parseExpression(s string, done chan int) {
 	// we are here if string contain non digit or none of math operators'
 	fmt.Fprintf(os.Stderr, "%s: is not valid math expression.\n", s)
 	done <- 1
+}
+
+func makeFloat(in interface{}) float64 {
+	switch in := in.(type) {
+	case int:
+		in = int(in)
+		return float64(in)
+	case float64:
+		return in
+	}
+	return 0
 }
 
 func add(x, y float64, done chan int) {
