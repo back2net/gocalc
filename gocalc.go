@@ -88,6 +88,7 @@ func parseExpression(s string, done chan int) {
 					break
 				}
 			}
+
 			outX := makeFloat(x)
 			outY := makeFloat(y)
 
@@ -122,7 +123,6 @@ func makeFloat(in interface{}) float64 {
 
 func add(x, y float64, done chan int) {
 	defer func() { done <- 1 }()
-
 	result := x + y
 	fmt.Fprintf(os.Stdout, "%v + %v = %v\n", x, y, result)
 }
